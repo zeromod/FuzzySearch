@@ -1,0 +1,23 @@
+image: parthasarathym/android_env:api_29
+
+before_script:
+  - export ANDROID_HOME=/android-sdk-linux
+  - export PATH=$PATH:/android-sdk-linux/platform-tools/
+  - chmod +x ./gradlew
+stages:
+  - build
+
+assembleDebug:
+  stage: build
+  only:
+    changes:
+      - app/**/*
+  script:
+    - ./gradlew assembleDebug
+    - mkdir aar
+    - cp app/build/outputs/aar/*.aar aar
+  artifacts:
+    when: on_success
+    name: "$CI_COMMIT_REF_NAME-$CI_JOB_NAME-$CI_JOB_ID"
+    paths:
+      - aar/*.aar
