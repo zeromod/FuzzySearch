@@ -2,6 +2,8 @@
 
 Kotlin Implimentation of algorithm : http://blog.amjith.com/fuzzyfinder-in-10-lines-of-python
 
+[![](https://jitpack.io/v/zeromod/FuzzySearch.svg)](https://jitpack.io/#zeromod/FuzzySearch)
+
 # Gradle
 
 Add it in your root build.gradle at the end of repositories:
