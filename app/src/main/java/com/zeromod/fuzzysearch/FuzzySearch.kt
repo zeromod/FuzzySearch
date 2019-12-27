@@ -1,62 +1,39 @@
 package com.zeromod.fuzzysearch
 
-import android.util.Log
+import java.lang.IllegalArgumentException
 
 /**
  * algorithm : http://blog.amjith.com/fuzzyfinder-in-10-lines-of-python
  * */
-inline fun <reified T : Any> List<T>.fuzzySearch(query: String?, fieldName: String? = null): List<T> {
-    query?.let {
-        val regexToken: String = if (query.isNotEmpty()) {
-            query.map { "$it.*?" }.joinToString("")
-        } else return this
+inline fun <reified T : Any> List<T>.fuzzySearch(
+    query: String?,
+    fields: List<String>
+): List<T> {
+    if (query == null) return this
+    if (this.size != fields.size) throw IllegalArgumentException("Object list and string list size doesn't match")
 
-        val regex = Regex(regexToken, setOf(RegexOption.IGNORE_CASE))
-        val filtered: MutableList<Pair<Int, Pair<Int, T>>> = emptyList<Pair<Int, Pair<Int, T>>>().toMutableList()
-        var matchResult: MatchResult?
+    val filteredResults: MutableList<T> = emptyList<T>().toMutableList()
 
-        this.forEach {
-            when {
-                (fieldName != null) -> {
-                    try {
-                        it::class.java.getDeclaredField(fieldName).let { field ->
-                            field.isAccessible = true
-                            val value = field.get(it)
-                            if (value != null && value is String) {
-                                matchResult = regex.find(value)
-                            } else {
-                                Log.e("Fuzzy Search", "Field: '$fieldName', is either null or not a String")
-                                return this
-                            }
-                        }
-                    } catch (e: NoSuchFieldException) {
-                        Log.e("Fuzzy Search", "Field: '$fieldName', not found in the class ${it::class}")
-                        return this
-                    }
-                }
+    val regexToken: String = if (query.isNotEmpty()) {
+        query.map { "$it.*?" }.joinToString("")
+    } else return this
 
-                (T::class == String::class) -> matchResult = regex.find(it as String)
+    val regex = Regex(regexToken, setOf(RegexOption.IGNORE_CASE))
+    val filtered: MutableList<FuzzyData> = emptyList<FuzzyData>().toMutableList()
 
-                else -> {
-                    Log.e("Fuzzy Search", "Unsupported operation , required field type String")
-                    return this
-                }
-            }
-            matchResult?.let { result ->
-                filtered.add(result.value.length to (result.range.first to it))
-            }
+    fields.forEachIndexed { index, field ->
+        regex.find(field)?.apply {
+            filtered.add(FuzzyData(value.length, range.first, index))
         }
-
-        filtered.sortWith(compareBy(
-            { it.first },
-            { it.second.first }
-        ))
-
-        val filteredResults: MutableList<T> = emptyList<T>().toMutableList()
-        filtered.forEach {
-            filteredResults.add(it.second.second)
-        }
-        return filteredResults
     }
-    return this
+
+    filtered.sortWith(compareBy(
+        { it.matchLength },
+        { it.rangeFirst }
+    ))
+
+    filtered.forEach {
+        filteredResults.add(this[it.originIndex])
+    }
+    return filteredResults
 }
