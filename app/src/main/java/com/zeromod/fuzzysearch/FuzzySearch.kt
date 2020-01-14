@@ -1,5 +1,7 @@
 package com.zeromod.fuzzysearch
 
+import java.lang.Exception
+
 /**
  * algorithm : http://blog.amjith.com/fuzzyfinder-in-10-lines-of-python
  * */
@@ -19,8 +21,12 @@ inline fun <reified T : Any> List<T>.fuzzySearch(
     val filtered: MutableList<FuzzyData> = emptyList<FuzzyData>().toMutableList()
 
     block(this).forEachIndexed { index, field ->
-        regex.find(field)?.apply {
-            filtered.add(FuzzyData(value.length, range.first, index))
+        try {
+            regex.find(field)?.apply {
+                filtered.add(FuzzyData(value.length, range.first, index))
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
