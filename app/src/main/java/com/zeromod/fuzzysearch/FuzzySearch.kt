@@ -12,22 +12,20 @@ inline fun <reified T : Any> List<T>.fuzzySearch(
     if (query == null) return this
 
     val filteredResults: MutableList<T> = emptyList<T>().toMutableList()
+    val filtered: MutableList<FuzzyData> = emptyList<FuzzyData>().toMutableList()
 
     val regexToken: String = if (query.isNotEmpty()) {
         query.map { "$it.*?" }.joinToString("")
     } else return this
-
-    val regex = Regex(regexToken, setOf(RegexOption.IGNORE_CASE))
-    val filtered: MutableList<FuzzyData> = emptyList<FuzzyData>().toMutableList()
-
-    block(this).forEachIndexed { index, field ->
-        try {
+    try {
+        val regex = Regex(regexToken, setOf(RegexOption.IGNORE_CASE))
+        block(this).forEachIndexed { index, field ->
             regex.find(field)?.apply {
                 filtered.add(FuzzyData(value.length, range.first, index))
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
 
     filtered.sortWith(compareBy(
